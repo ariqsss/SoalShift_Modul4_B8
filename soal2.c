@@ -77,16 +77,24 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 }
 static int xmp_chmod();
 static int xmp_rename();
+static int xmp_mkdir();
+static int xmp_link();
+static int xmp_unlink();
+
 static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
   char fpath[1000];
-	if(strcmp(path,"/") == 0)
-	{
+  char alamat[1000];
+  char namafile[20];
+	if(strcmp(path,"/") == 0){
 		path=dirpath;
 		sprintf(fpath,"%s",path);
 	}
-	else sprintf(fpath, "%s%s",dirpath,path);
+	else {
+	sprintf(namafile,"%s",path);
+	sprintf(fpath, "%s%s",dirpath,path);
+	}
 	int res = 0;
 	int fd = 0 ;
 	int len=strlen(fpath);
@@ -119,6 +127,12 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 	sprintf(newName,"%s.ditandai",newName);
 	xmp_rename(fpath,newName);
 	xmp_chmod(newName,0333);
+	sprintf(alamat,"%s/rahasia",dirpath);
+	xmp_mkdir(alamat,0755);
+	sprintf(alamat,"%s/rahasia/%s",dirpath,namafile);
+	xmp_link(newName,alamat);
+	xmp_unlink(newName);
+	close(fd);
 	return strlen( errorku ) - offset; 
 	}
 return res;
@@ -144,6 +158,47 @@ static int xmp_chmod(const char *path, mode_t mode)
 
 	return 0;
 }
+static int xmp_mkdir(const char *path, mode_t mode)
+{
+	int res;
+
+	res = mkdir(path, mode);
+	if (res == -1)
+		return -errno;
+
+	return 0;
+}
+static int xmp_opendir(const char* path, struct fuse_file_info* fi)
+{
+	DIR *res;
+	res = opendir(path);
+	if (res == NULL)
+		return -errno;
+	
+	return 0;
+
+}
+static int xmp_link(const char *from, const char *to)
+{
+	int res;
+
+	res = link(from, to);
+	if (res == -1)
+		return -errno;
+
+	return 0;
+}
+static int xmp_unlink(const char *path)
+{
+	int res;
+
+	res = unlink(path);
+	if (res == -1)
+		return -errno;
+
+	return 0;
+}
+
 
 
 static struct fuse_operations xmp_oper = {
@@ -152,6 +207,10 @@ static struct fuse_operations xmp_oper = {
 	.read		= xmp_read,
 	.rename		= xmp_rename,
 	.chmod		= xmp_chmod,
+	.mkdir		= xmp_mkdir,
+	.opendir	= xmp_opendir,
+	.link		= xmp_link,
+	.unlink		= xmp_unlink,
 };
 
 int main(int argc, char *argv[])
