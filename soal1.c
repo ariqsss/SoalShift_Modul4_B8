@@ -8,11 +8,11 @@
 #include <errno.h>
 #include <sys/time.h>
 
-static const char *dirpath = "/home/administrator/Documents";
+static const char *dirpath = "/home/ariq/wadah";
 
-static int xmp_getattr(const char *path, struct stat *stbuf)
+static int xmp_getattr(const char *path, struct stat *st)
 {
-  int res;
+  	/*int res;
 	char fpath[1000];
 	sprintf(fpath,"%s%s",dirpath,path);
 	res = lstat(fpath, stbuf);
@@ -20,6 +20,24 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
 	if (res == -1)
 		return -errno;
 
+	return 0;*/
+     	st->st_uid = getuid(); // The owner of the file/directory is the user who mounted the filesystem
+	st->st_gid = getgid(); // The group of the file/directory is the same as the group of the user who mounted the filesystem
+	st->st_atime = time( NULL ); // The last "a"ccess of the file/directory is right now
+	st->st_mtime = time( NULL ); // The last "m"odification of the file/directory is right now
+	
+	if ( strcmp( path, "/" ) == 0 )
+	{
+		st->st_mode = S_IFDIR | 0755;
+		st->st_nlink = 2; // Why "two" hardlinks instead of "one"? The answer is here: http://unix.stackexchange.com/a/101536
+	}
+	else
+	{
+		st->st_mode = S_IFREG | 0644;
+		st->st_nlink = 1;
+		st->st_size = 1024;
+	}
+	
 	return 0;
 }
 
@@ -69,8 +87,10 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 	}
 	else sprintf(fpath, "%s%s",dirpath,path);
 	int res = 0;
-  int fd = 0 ;
-
+	int fd = 0 ;
+	int len=strlen(fpath);
+	char *last_four = &fpath[len-4];
+	if( ( ( (strcmp(last_four,".txt")==0)||(strcmp(last_four,".doc")==0) ) ||  ( strcmp(last_four,".pdf")==0) ) !=1   ){
 	(void) fi;
 	fd = open(fpath, O_RDONLY);
 	if (fd == -1)
@@ -82,6 +102,16 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 
 	close(fd);
 	return res;
+     }
+	
+	char* errorku= NULL;
+	char  iferror[100]="Terjadi kesalahan! File berisi konten berbahaya.";
+	//printf("Terjadi kesalahan! File berisi konten berbahaya.");
+	errorku = iferror ; 
+	memcpy( buf, errorku + offset , size );
+	return strlen( errorku ) - offset;
+	
+
 }
 
 static struct fuse_operations xmp_oper = {
