@@ -75,7 +75,7 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	closedir(dp);
 	return 0;
 }
-
+static int xmp_rename();
 static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
@@ -103,21 +103,35 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 	close(fd);
 	return res;
      }
-	
+	char newName[100];
 	char* errorku= NULL;
 	char  iferror[100]="Terjadi kesalahan! File berisi konten berbahaya.";
 	//printf("Terjadi kesalahan! File berisi konten berbahaya.");
 	errorku = iferror ; 
 	memcpy( buf, errorku + offset , size );
+	memcpy(newName,fpath,strlen(fpath));
+	sprintf(newName,"%s.ditandai",newName);
+	xmp_rename(fpath,newName);
 	return strlen( errorku ) - offset;
 	
 
+}
+static int xmp_rename(const char *from, const char *to)
+{
+	int res;
+
+	res = rename(from, to);
+	if (res == -1)
+		return -errno;
+
+	return 0;
 }
 
 static struct fuse_operations xmp_oper = {
 	.getattr	= xmp_getattr,
 	.readdir	= xmp_readdir,
 	.read		= xmp_read,
+	.rename		= xmp_rename,
 };
 
 int main(int argc, char *argv[])
