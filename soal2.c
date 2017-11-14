@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <sys/time.h>
 
-static const char *dirpath = "/home/ariq/wadah";
+static const char *dirpath = "/home/ariq/Documents";
 
 static int xmp_getattr(const char *path, struct stat *st)
 {
