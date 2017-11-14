@@ -12,15 +12,16 @@ static const char *dirpath = "/home/ariq/Downloads";
 
 static int xmp_getattr(const char *path, struct stat *st)
 {
-  	/*int res;
+  	int res;
 	char fpath[1000];
 	sprintf(fpath,"%s%s",dirpath,path);
-	res = lstat(fpath, stbuf);
+	res = lstat(fpath, st);
 
 	if (res == -1)
 		return -errno;
 
-	return 0;*/
+	return 0;
+/*
      	st->st_uid = getuid(); // The owner of the file/directory is the user who mounted the filesystem
 	st->st_gid = getgid(); // The group of the file/directory is the same as the group of the user who mounted the filesystem
 	st->st_atime = time( NULL ); // The last "a"ccess of the file/directory is right now
@@ -38,7 +39,7 @@ static int xmp_getattr(const char *path, struct stat *st)
 		st->st_size = 1024;
 	}
 	
-	return 0;
+	return 0; */
 }
 
 static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
@@ -68,7 +69,7 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		memset(&st, 0, sizeof(st));
 		st.st_ino = de->d_ino;
 		st.st_mode = de->d_type << 12;
-		res = (filler(buf, de->d_name, &st, 0));
+		res = (filler(buf,de->d_name, &st, 0));
 			if(res!=0) break;
 	}
 
@@ -79,11 +80,18 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
-	int fd;
-	int res;
+	char fpath[1000];
+	if(strcmp(path,"/") == 0)
+	{
+		path=dirpath;
+		sprintf(fpath,"%s",path);
+	}
+	else sprintf(fpath, "%s%s",dirpath,path);
+	int res = 0;
+  int fd = 0 ;
 
 	(void) fi;
-	fd = open(path, O_RDONLY);
+	fd = open(fpath, O_RDONLY);
 	if (fd == -1)
 		return -errno;
 
