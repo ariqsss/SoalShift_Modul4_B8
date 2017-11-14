@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <sys/time.h>
 
-static const char *dirpath = "/home/ariq/wadah";
+static const char *dirpath = "/home/abaar/Documents";
 
 static int xmp_getattr(const char *path, struct stat *st)
 {
@@ -92,35 +92,25 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 	int len=strlen(fpath);
 	char *last_four = &fpath[len-4];
 	(void) fi;
-        fd = open(fpath, O_RDONLY);
-        if (fd == -1)
-                return -errno;
-
-	if( ( ( (strcmp(last_four,".txt")==0)||(strcmp(last_four,".doc")==0) ) ||  ( strcmp(last_four,".pdf")==0) ) !=1   ){
-	/*(void) fi;
-	fd = open(fpath, O_RDONLY);
-	if (fd == -1)
-		return -errno;*/
-	res = pread(fd, buf, size, offset);
-	if (res == -1)
-		res = -errno;
-
-	close(fd);
-	return res;
-     }
-	if( ( ( (strcmp(last_four,".txt")==0)||(strcmp(last_four,".doc")==0) ) ||  ( strcmp(last_four,".pdf")==0) ) ==1   ){
-	char newName[100];
-	char* errorku= NULL;
-	char  iferror[100]="Terjadi kesalahan! File berisi konten berbahaya.";
-	//printf("Terjadi kesalahan! File berisi konten berbahaya.");
-	errorku = iferror ; 
-	memcpy( buf, errorku + offset , size );
-	memcpy(newName,fpath,strlen(fpath));
-	sprintf(newName,"%s.ditandai",newName);
-	xmp_rename(fpath,newName);
-	xmp_chmod(newName,0333);
-	return strlen( errorku ) - offset; 
+	if ( strcmp(last_four,".txt") != 0 && strcmp(last_four,".doc")!=0 && strcmp(last_four,".pdf")!=0){
+		//kalau bukan ya open seperti biasa
+		fd = open(fpath, O_RDONLY);
+		if (fd == -1 ) return -errno;
+		res = pread (fd,buf,size,offset);
+		if (res == -1) res=-errno;
+		close(fd);
 	}
+	else { //kalau iya maka lakukan perintahnya
+	char newname[100], *errorku=NULL , iferror[100]="Terjadi kesalahan! File berisi konten berbahaya.\n";
+	errorku = iferror;
+	memcpy(buf, errorku+offset , size);
+	memcpy(newname,fpath,strlen(fpath));
+	sprintf(newname,"%s.ditandai",newname);
+	xmp_rename(fpath,newname);
+	xmp_chmod(newname,0333);
+	return strlen( errorku ) - offset;
+	}
+ 
 return res;
 
 }
