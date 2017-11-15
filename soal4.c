@@ -29,6 +29,7 @@
 
 #include <fuse.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -184,9 +185,9 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 	int res = 0;
 	int fd = 0 ;
 	int len=strlen(fpath);
-	char *last_four = &fpath[len-4];
+	char *last_five = &fpath[len-5];
 	(void) fi;
-        if ( strcmp(last_four,".txt") != 0 && strcmp(last_four,".doc")!=0 && strcmp(last_four,".pdf")!=0){
+        if ( strcmp(last_five,".copy") != 0 ){
  		//kalau bukan ya open seperti biasa
  		fd = open(fpath, O_RDONLY);
  		if (fd == -1 ) return -errno;
@@ -195,11 +196,13 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
  		close(fd);
  	}
  	else { //kalau iya maka lakukan perintahnya
- 	char  *errorku=NULL , iferror[100]="Terjadi kesalahan! File berisi konten berbahaya.\n";
- 	errorku = iferror;
- 	memcpy(buf, errorku+offset , size);
+ /*	char  *errorku=NULL , iferror[100]="File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\n";
+ 	
+	errorku = iferror;
+ 	memcpy(buf, errorku+offset , size);*/
+	system("zenity --error --text='File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\n'");
 	close(fd);
-	return strlen( errorku ) - offset; 
+	return 0; 
 	}
 return res;
 
