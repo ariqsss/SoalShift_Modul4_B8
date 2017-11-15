@@ -38,6 +38,7 @@
 
 static const char *dirpath = "/home/ariq/Downloads";
 
+static int xmp_mknod();
 static int xmp_getattr(const char *path, struct stat *stbuf)
 {
 	char fpath[1000];
@@ -199,6 +200,7 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 	 char fpath[1000];
 	 char alamat[1000];
 	 char namafile[20];
+
 	if(strcmp(path,"/") == 0)
 	{
 		path=dirpath;
@@ -210,12 +212,12 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 	}
 	int res = 0;
   	int fd = 0 ;
-
+	
 	(void) fi;
-	sprintf(alamat,"%s/simpanan",dirpath);
-	xmp_mkdir(alamat,0755);
+/*	sprintf(alamat,"%s/simpanan",dirpath);
+	xmp_mkdir(alamat,0755);*/
 	sprintf(alamat,"%s/simpanan/%s",dirpath,namafile);
-	xmp_link(fpath,alamat);
+//	xmp_link(fpath,alamat);
 	fd = open(alamat, O_WRONLY);
 	if (fd == -1)
 		return -errno;
@@ -231,15 +233,48 @@ static int xmp_truncate(const char *path, off_t size)
 {
 	int res;
 	        char fpath[1000];
-        sprintf(fpath,"%s%s",dirpath,path);
-
-	res = truncate(fpath, size);
+	char alamat[1000];
+	char namafile[20];
+                if(strcmp(path,"/") == 0)
+        {
+                path=dirpath;
+                sprintf(fpath,"%s",path);
+        }
+        else {
+        sprintf(namafile,"%s",path);
+        sprintf(fpath, "%s%s",dirpath,path);
+        }
+        sprintf(alamat,"%s/simpanan",dirpath);
+        xmp_mkdir(alamat,0755); 
+        sprintf(alamat,"%s/simpanan/%s",dirpath,namafile);
+//        xmp_link(fpath,alamat);
+	xmp_mknod(alamat,0664);
+	res = truncate(alamat, size);
 	if (res == -1)
 		return -errno;
 
 	return 0;
 }
 
+static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
+{
+	int res;
+	
+	/* On Linux this could just be 'mknod(path, mode, rdev)' but this
+	   is more portable */
+	if (S_ISREG(mode)) {
+		res = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
+		if (res >= 0)
+			res = close(res);
+	} else if (S_ISFIFO(mode))
+		res = mkfifo(path, mode);
+	else
+		res = mknod(path, mode, rdev);
+	if (res == -1)
+		return -errno;
+
+	return 0;
+}
 
 static struct fuse_operations xmp_oper = {
 	.getattr	= xmp_getattr,
@@ -253,6 +288,7 @@ static struct fuse_operations xmp_oper = {
 	.read		= xmp_read,
 	.write		= xmp_write,
 	.truncate	= xmp_truncate,
+	.mknod		= xmp_mknod,
 };
 
 
