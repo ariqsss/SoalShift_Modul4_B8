@@ -144,10 +144,8 @@ static int xmp_link(const char *from, const char *to)
 static int xmp_chmod(const char *path, mode_t mode)
 {
 	int res;
-	char fpath[1000];
-        sprintf(fpath,"%s%s",dirpath,path);
 
-	res = chmod(fpath, mode);
+	res = chmod(path, mode);
 	if (res == -1)
 		return -errno;
 
@@ -187,10 +185,12 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 	int len=strlen(fpath);
 	char *last_five = &fpath[len-5];
 	(void) fi;
+	fd = open(fpath, O_RDONLY);
+                if (fd == -1 ) return -errno;
         if ( strcmp(last_five,".copy") != 0 ){
  		//kalau bukan ya open seperti biasa
- 		fd = open(fpath, O_RDONLY);
- 		if (fd == -1 ) return -errno;
+ 	/*	fd = open(fpath, O_RDONLY);
+ 		if (fd == -1 ) return -errno;*/
  		res = pread (fd,buf,size,offset);
  		if (res == -1) res=-errno;
  		close(fd);
@@ -234,6 +234,7 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 	sprintf(alamat,"%s/simpanan/%s.copy",dirpath,namafile);
 //	xmp_link(fpath,alamat);
 	fd = open(alamat, O_WRONLY);
+	xmp_chmod(alamat,0444);
 	if (fd == -1)
 		return -errno;
 	res = pwrite(fd, buf, size, offset);
@@ -267,7 +268,6 @@ static int xmp_truncate(const char *path, off_t size)
 	res = truncate(alamat, size);
 	if (res == -1)
 		return -errno;
-
 	return 0;
 }
 
