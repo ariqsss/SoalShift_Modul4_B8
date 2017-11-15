@@ -216,7 +216,7 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 	(void) fi;
 /*	sprintf(alamat,"%s/simpanan",dirpath);
 	xmp_mkdir(alamat,0755);*/
-	sprintf(alamat,"%s/simpanan/%s",dirpath,namafile);
+	sprintf(alamat,"%s/simpanan/%s.copy",dirpath,namafile);
 //	xmp_link(fpath,alamat);
 	fd = open(alamat, O_WRONLY);
 	if (fd == -1)
@@ -246,7 +246,7 @@ static int xmp_truncate(const char *path, off_t size)
         }
         sprintf(alamat,"%s/simpanan",dirpath);
         xmp_mkdir(alamat,0755); 
-        sprintf(alamat,"%s/simpanan/%s",dirpath,namafile);
+        sprintf(alamat,"%s/simpanan/%s.copy",dirpath,namafile);
 //        xmp_link(fpath,alamat);
 	xmp_mknod(alamat,0664);
 	res = truncate(alamat, size);
