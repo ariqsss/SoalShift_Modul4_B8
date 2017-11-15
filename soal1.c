@@ -7,37 +7,19 @@
 #include <dirent.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <stdlib.h>
 
-static const char *dirpath = "/home/abaar/Documents";
+static const char *dirpath = "/home/ariq/Documents";
 
-static int xmp_getattr(const char *path, struct stat *st)
+static int xmp_getattr(const char *path, struct stat *stbuf)
 {
-  	/*int res;
+  	int res;
 	char fpath[1000];
 	sprintf(fpath,"%s%s",dirpath,path);
 	res = lstat(fpath, stbuf);
-
 	if (res == -1)
 		return -errno;
-
-	return 0;*/
-     	st->st_uid = getuid(); // The owner of the file/directory is the user who mounted the filesystem
-	st->st_gid = getgid(); // The group of the file/directory is the same as the group of the user who mounted the filesystem
-	st->st_atime = time( NULL ); // The last "a"ccess of the file/directory is right now
-	st->st_mtime = time( NULL ); // The last "m"odification of the file/directory is right now
-	
-	if ( strcmp( path, "/" ) == 0 )
-	{
-		st->st_mode = S_IFDIR | 0755;
-		st->st_nlink = 2; // Why "two" hardlinks instead of "one"? The answer is here: http://unix.stackexchange.com/a/101536
-	}
-	else
-	{
-		st->st_mode = S_IFREG | 0644;
-		st->st_nlink = 1;
-		st->st_size = 1024;
-	}
-	
+	return 0;
 	return 0;
 }
 
@@ -92,23 +74,27 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 	int len=strlen(fpath);
 	char *last_four = &fpath[len-4];
 	(void) fi;
+	fd = open(fpath, O_RDONLY);
+                if (fd == -1 ) return -errno;
 	if ( strcmp(last_four,".txt") != 0 && strcmp(last_four,".doc")!=0 && strcmp(last_four,".pdf")!=0){
 		//kalau bukan ya open seperti biasa
-		fd = open(fpath, O_RDONLY);
-		if (fd == -1 ) return -errno;
+		/*fd = open(fpath, O_RDONLY);
+		if (fd == -1 ) return -errno;*/
 		res = pread (fd,buf,size,offset);
 		if (res == -1) res=-errno;
 		close(fd);
 	}
 	else { //kalau iya maka lakukan perintahnya
-	char newname[100], *errorku=NULL , iferror[100]="Terjadi kesalahan! File berisi konten berbahaya.\n";
-	errorku = iferror;
-	memcpy(buf, errorku+offset , size);
+	char newname[100];//, *errorku=NULL , iferror[100]="Terjadi kesalahan! File berisi konten berbahaya.\n";
+//	errorku = iferror;
+//	memcpy(buf, errorku+offset , size);
 	memcpy(newname,fpath,strlen(fpath));
 	sprintf(newname,"%s.ditandai",newname);
 	xmp_rename(fpath,newname);
 	xmp_chmod(newname,0333);
-	return strlen( errorku ) - offset;
+	system("zenity --error --text='Terjadi kesalahan! File berisi konten berbahaya.\n'");
+
+	return 0;
 	}
  
 return res;
